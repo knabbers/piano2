@@ -52,42 +52,55 @@ class Handler(http.server.BaseHTTPRequestHandler):
 import threading
 event = threading.Event()
 
+import pygame
+import time
+import pygame.midi
+
+pygame.midi.init()
+player= pygame.midi.Output(0)
+player.set_instrument(48,1)
+
 def match():	
 	global min_delta
 	global max_delta
 	global timestamps
 	global cnt
-
-	while True:
-		event.wait()
-		event.clear()
-		if 0 in timestamps and 1 in timestamps:
-			delta = (timestamps[0] - timestamps[1])
-			if abs(delta) < size_to_delta(3):
-				cnt += 1
-				print ("delta: " + str(delta))
-				if cnt <= 2:
-					print ("calibrating!!!!!")
-					min_delta = min(min_delta,delta)
-					max_delta = max(max_delta,delta)
-					print(min_delta)
-					print(max_delta)				
-				else:
-					assert min_delta != max_delta
-					rng = max_delta-min_delta
-					#delta = min(delta,max_delta)
-					#delta = max(delta,min_delta)
-					if min_delta-rng/12 <= delta <= max_delta+rng/12:
-						pos = (delta-min_delta)/(max_delta-min_delta)
-						print ("Pos: " + str(pos))
-						toplay = 2*880 * 2**(pos)
-
-						generator.play(int(round_note(toplay)), 0.1, 1)
-						while generator.is_playing():
-							pass                # Do something useful in here (e.g. recording)
-						last_output = time.perf_counter()
+	try:
+		while True:
+			event.wait()
+			event.clear()
+			if 0 in timestamps and 1 in timestamps:
+				delta = (timestamps[0] - timestamps[1])
+				if abs(delta) < size_to_delta(3):
+					cnt += 1
+					print ("delta: " + str(delta))
+					if cnt <= 2:
+						print ("calibrating!!!!!")
+						min_delta = min(min_delta,delta)
+						max_delta = max(max_delta,delta)
+						print(min_delta)
+						print(max_delta)				
 					else:
-						print ("not in range!")
+						assert min_delta != max_delta
+						rng = max_delta-min_delta
+						#delta = min(delta,max_delta)
+						#delta = max(delta,min_delta)
+						if min_delta-rng/12 <= delta <= max_delta+rng/12:
+							pos = (delta-min_delta)/(max_delta-min_delta)
+							print ("Pos: " + str(pos))
+							toplay = 2*880 * 2**(pos)
+
+							# generator.play(int(round_note(toplay)), 0.1, 1)
+							# while generator.is_playing():
+							# 	pass                # Do something useful in here (e.g. recording)
+							note = int(60*pos*12)
+							player.note_on(note, 127,1)
+						    time.sleep(1)
+						    player.note_off(note,127,1)
+						else:
+							print ("not in range!")
+	finally:
+		pygame.quit()
 
 
 thr = threading.Thread(target=match)

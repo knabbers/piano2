@@ -1,14 +1,7 @@
 # Python 3, please
-ON_HOST = False
-if ON_HOST:
-	HOST = "localhost" 
-	CLIENT_ID = 0
-else:
-	HOST = "192.168.0.22"
-	CLIENT_ID =  1
-
-
+HOST = "192.168.0.22"
 PORT = 8000
+CLIENT_ID = 1
 
 import _portaudio
 _portaudio.initialize()
@@ -18,21 +11,19 @@ import myslowclap as sc
 import urllib.request
 import time
 
-#input("Press enter to sync")
 time.sleep(0.2)
 print("listening...")
 
 feed = sc.MicrophoneFeed()
-detector = sc.RateLimitedDetector(sc.AmplitudeDetector(feed, threshold=1000),0.1)
+detector = sc.RateLimitedDetector(sc.AmplitudeDetector(feed, threshold=4000),0.1)
 
 start_time = None
-
 
 def get_async(url):
 	def get_url():
 		t1 = time.perf_counter()
 		urllib.request.urlopen(url).read()
-		print ("lat: " + str(int( (time.perf_counter() - t1)*1000)) )
+		print ("latency (ms): " + str(int( (time.perf_counter() - t1)*1000)) )
 	t = threading.Thread(target=get_url)
 	t.daemon = True
 	t.start()
@@ -40,7 +31,6 @@ def get_async(url):
 
 
 for clap in detector:
-    # do something
     if start_time==None:
     	start_time = clap.time #time.perf_counter()
     	print ("Synced!")
